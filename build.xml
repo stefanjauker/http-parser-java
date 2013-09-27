@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="http-parser" default="build" basedir=".">
+
+    <property file="${user.home}/.avatar-js.properties"/>
+    <import file="${avatar-js.home}/common.xml"/>
+
+    <target name="setup" depends="init, copy-source-files"/>
+
+    <target name="build" depends="setup, jar"/>
+
+    <target name="init" depends="common-init">
+        <property name="product.name" value="http-parser-java"/>
+        <property name="build.type" value="Debug"/>
+        <property name="src.java.dir" location="src/main/java"/>
+        <property name="test.java.dir" location="src/test/java"/>
+        <property name="javac.debug" value="true"/>
+        <property name="javac.debuglevel" value="lines"/>
+        <path id="javac.classpath.id"/>
+        <path id="javac.test.classpath.id"/>
+    </target>
+
+    <target name="javah" depends="compile">
+        <javah destdir="${native.build.dir}" classpath="${classes.dir}">
+            <class name="net.java.httpparser.HttpParser"/>
+        </javah>
+    </target>
+
+    <target name="copy-source-files">
+        <property name="native.build.dir" value="${basedir}/out/${build.type}/obj.target/${product.name}/"/>
+        <copy todir="${native.build.dir}">
+            <fileset dir="${source.home}/deps/http_parser" includes="**/http_parser.c"/>
+            <fileset dir="${source.home}/deps/http_parser" includes="**/http_parser.h"/>
+        </copy>
+    </target>
+
+    <target name="configure-unix" depends="config-gyp" if="isLinux">
+        <gyp format="make" library="shared_library" target="${build.type}"/>
+    </target>
+
+    <target name="configure-mac" depends="config-gyp" if="isMacOSX">
+        <gyp format="make" library="shared_library" target="${build.type}"/>
+    </target>
+
+    <target name="configure-windows" depends="config-gyp" if="isWindows">
+        <gyp format="msvs" library="shared_library" target="${build.type}"/>
+    </target>
+
+    <target name="jar" depends="setup, compile, make">
+        <property name="product.jar" value="${dist.dir}/${product.name}.jar"/>
+        <jar basedir="${classes.dir}" destfile="${product.jar}"/>
+    </target>
+
+</project>
