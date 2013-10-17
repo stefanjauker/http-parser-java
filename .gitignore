@@ -13,6 +13,9 @@ Debug/
 Default/
 Release/
 
+atlassian-ide-plugin.xml
+.classpath
+.project
 *.iml
 *.log
 *.gypi
