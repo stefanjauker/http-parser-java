@@ -48,7 +48,7 @@ public final class HttpParser {
     private boolean destroyed;
 
     static {
-        System.loadLibrary("http-parser-java");
+        System.loadLibrary("avatar-js");
     }
 
     public HttpParser() {
