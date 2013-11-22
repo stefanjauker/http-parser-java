@@ -143,10 +143,10 @@ JNIEXPORT void JNICALL Java_net_java_httpparser_HttpParser__1init
 /*
  * Class:     net_java_httpparser_HttpParser
  * Method:    _execute
- * Signature: (JLnet/java/httpparser/HttpParserSettings;[BII)J
+ * Signature: (JLnet/java/httpparser/HttpParserSettings;Ljava/nio/ByteBuffer;[BII)J
  */
 JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1execute
-  (JNIEnv *env, jobject that, jlong ptr, jobject settings, jbyteArray buffer, jint offset, jint length) {
+  (JNIEnv *env, jobject that, jlong ptr, jobject settings, jobject buffer, jbyteArray data, jint offset, jint length) {
 
   assert(ptr);
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
@@ -163,10 +163,16 @@ JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1execute
   ps.on_body = _on_body_cb;
   ps.on_message_complete = _on_message_complete_cb;
 
-  jbyte* data = new jbyte[length];
-  env->GetByteArrayRegion(buffer, offset, length, data);
-  size_t r = http_parser_execute(parser, &ps, reinterpret_cast<const char*>(data), length);
-  delete[] data;
+  size_t r;
+  if (data) {
+    jbyte* base = new jbyte[length];
+    env->GetByteArrayRegion(data, offset, length, base);
+    r = http_parser_execute(parser, &ps, reinterpret_cast<const char*>(base), length);
+    delete[] base;
+  } else {
+    jbyte* base = (jbyte*) env->GetDirectBufferAddress(buffer);
+    r = http_parser_execute(parser, &ps, reinterpret_cast<const char*>(base + offset), length);
+  }
   env->DeleteGlobalRef((jobject) parser->data);
   parser->data = NULL;
   return r;

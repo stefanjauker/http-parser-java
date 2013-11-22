@@ -42,8 +42,6 @@ public final class HttpParser {
         }
     }
 
-    private static final Object lock = new Object();
-
     private final long pointer;
     private boolean destroyed;
 
@@ -52,79 +50,56 @@ public final class HttpParser {
     }
 
     public HttpParser() {
-        synchronized (lock) {
-            pointer = _new();
-            destroyed = false;
-        }
+        pointer = _new();
+        destroyed = false;
     }
 
     public void init(final Type type) {
-        synchronized (lock) {
-            _init(pointer, type.value);
-        }
+        _init(pointer, type.value);
     }
 
     public short minor() {
-        synchronized (lock) {
-            return _minor(pointer);
-        }
+        return _minor(pointer);
     }
 
     public short major() {
-        synchronized (lock) {
-            return _major(pointer);
-        }
+        return _major(pointer);
     }
 
     public String method() {
-        synchronized (lock) {
-            return _method(pointer);
-        }
+        return _method(pointer);
     }
 
     public String version() {
-        synchronized (lock) {
-            return _version();
-        }
+        return _version();
     }
 
     public String errnoName() {
-        synchronized (lock) {
-            return _errno_name(pointer);
-        }
+        return _errno_name(pointer);
     }
 
     public short statusCode() {
-        synchronized (lock) {
-            return _status_code(pointer);
-        }
+        return _status_code(pointer);
     }
 
     public long execute(final HttpParserSettings settings, final ByteBuffer buffer) {
-        synchronized (lock) {
-            return _execute(pointer, settings,
-                   buffer.array(), buffer.position(), buffer.limit());
-        }
+        return buffer.hasArray() ?
+                _execute(pointer, settings, buffer, buffer.array(), buffer.position(), buffer.limit()) :
+                _execute(pointer, settings, buffer, null, buffer.position(), buffer.limit());
     }
 
     public boolean shouldKeepAlive() {
-        synchronized (lock) {
-            return _should_keep_alive(pointer);
-        }
+        return _should_keep_alive(pointer);
     }
 
     public boolean upgrade() {
-        synchronized (lock) {
-            return _upgrade(pointer);
-        }
+        return _upgrade(pointer);
     }
 
     public void destroy() {
-        synchronized (lock) {
-            if (!destroyed) {
-                _destroy(pointer);
-                destroyed = true;
-            }
+        if (!destroyed) {
+            _destroy(pointer);
+            destroyed = true;
         }
     }
 
@@ -140,7 +115,8 @@ public final class HttpParser {
 
     private native long _execute(final long pointer,
                                  final HttpParserSettings settings,
-                                 final byte[] buffer,
+                                 final ByteBuffer buffer,
+                                 final byte[] data,
                                  final int offset,
                                  final int length);
 
