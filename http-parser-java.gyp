@@ -4,7 +4,8 @@
     },
     'variables': {
         'HTTPPARSER_HOME%': '<(SOURCE_HOME%)/deps/http_parser',
-        'HTTPPARSER_PATH%': 'out/<(target)/lib.target',
+        'HTTP_PARSER_JAVA_HOME%': '<(HTTP_PARSER_JAVA_HOME%)',
+        'SRC%': '<(HTTP_PARSER_JAVA_HOME%)/out/<(target)/obj.target',
     },
     'target_defaults': {
         'default_configuration': '<(target)',
@@ -15,6 +16,9 @@
                 'conditions': [
                     ['OS == "win"', {
                         'msvs_settings': {
+                            'VCCLCompilerTool': {
+                                'ObjectFile': 'out\<(target)\obj.target\http-parser-java\\',
+                            },
                             'VCLinkerTool': {
                                 'GenerateDebugInformation': 'true',
                             },
@@ -50,7 +54,7 @@
             'include_dirs': [
                 '<(JAVA_HOME)/include',
                 '<(HTTPPARSER_HOME)',
-                '<(HTTPPARSER_PATH)/../obj.target/http-parser-java',
+                '<(SRC)/http-parser-java',
             ],
             'conditions': [
                 ['OS == "linux"', {
@@ -79,8 +83,8 @@
                         }]
                     ],
                     'sources': [
-                        '<(HTTPPARSER_PATH)/../obj.target/http-parser-java/http_parser.c',
-                        '<(HTTPPARSER_PATH)/../obj.target/http-parser-java/parser.cpp',
+                        '<(SRC)/http-parser-java/http_parser.c',
+                        '<(SRC)/http-parser-java/parser.cpp',
                     ],
                     'libraries': [
                     ],
@@ -98,8 +102,8 @@
                         }]
                     ],
                     'sources': [
-                        '<(HTTPPARSER_PATH)/../obj.target/http-parser-java/http_parser.c',
-                        '<(HTTPPARSER_PATH)/../obj.target/http-parser-java/parser.cpp',
+                        '<(SRC)/http-parser-java/http_parser.c',
+                        '<(SRC)/http-parser-java/parser.cpp',
                     ],
                     'defines': [
                         '_WIN32',
