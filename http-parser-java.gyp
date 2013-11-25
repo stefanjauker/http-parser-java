@@ -5,7 +5,7 @@
     'variables': {
         'HTTPPARSER_HOME%': '<(SOURCE_HOME%)/deps/http_parser',
         'HTTP_PARSER_JAVA_HOME%': '<(HTTP_PARSER_JAVA_HOME%)',
-        'SRC%': '<(HTTP_PARSER_JAVA_HOME%)/out/<(target)/obj.target',
+        'SRC%': './out/<(target)/obj.target',
     },
     'target_defaults': {
         'default_configuration': '<(target)',
