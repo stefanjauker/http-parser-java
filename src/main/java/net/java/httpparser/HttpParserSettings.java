@@ -31,15 +31,15 @@ public abstract class HttpParserSettings {
         return 0;
     }
 
-    public int onURL(final byte[] data) {
+    public int onURL(int offset, int length) {
         return 0;
     }
 
-    public int onHeaderField(final byte[] data) {
+    public int onHeaderField(int offset, int length) {
         return 0;
     }
 
-    public int onHeaderValue(final byte[] data) {
+    public int onHeaderValue(int offset, int length) {
         return 0;
     }
 
@@ -47,7 +47,7 @@ public abstract class HttpParserSettings {
         return 0;
     }
 
-    public int onBody(final byte[] data) {
+    public int onBody(int offset, int length) {
         return 0;
     }
 

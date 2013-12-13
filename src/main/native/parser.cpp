@@ -43,22 +43,45 @@ static jmethodID _on_headers_complete_mid = NULL;
 static jmethodID _on_body_mid = NULL;
 static jmethodID _on_message_complete_mid = NULL;
 
+class DataHolder {
+ private:
+   jobject _settings;
+   const char* _data;
+   JNIEnv* _env;
+
+ public:
+   inline jobject settings() { return _settings; }
+   inline const char* data() { return _data; }
+   DataHolder(JNIEnv* env, jobject settings, const char* data);
+   ~DataHolder();
+};
+
+DataHolder::DataHolder(JNIEnv* env, jobject settings, const char* data) {
+  assert(settings);
+  assert(data);
+  _env = env;
+  // settings not pin, parser is currently synchronous
+  _settings = settings;
+  _data = data;
+}
+
+DataHolder::~DataHolder() { }
+
 static int call_cb(jmethodID mid, http_parser* parser) {
   assert(_env);
   assert(parser);
   assert(parser->data);
-  jobject settings = (jobject) parser->data;
-  return _env->CallIntMethod(settings, mid);
+  DataHolder* holder = (DataHolder*) parser->data;
+  return _env->CallIntMethod(holder->settings(), mid);
 }
 
 static int call_data_cb(jmethodID mid, http_parser* parser, const char *at, size_t length) {
   assert(_env);
   assert(parser);
   assert(parser->data);
-  jobject settings = (jobject) parser->data;
-  jbyteArray bytes = _env->NewByteArray(length);
-  _env->SetByteArrayRegion(bytes, 0, length, reinterpret_cast<const jbyte*>(at));
-  return _env->CallIntMethod(settings, mid, bytes);
+  DataHolder* holder = (DataHolder*) parser->data;
+  const size_t offset = at - holder->data();
+  return _env->CallIntMethod(holder->settings(), mid, offset, length);
 }
 
 static int _on_message_begin_cb(http_parser* parser) {
@@ -105,19 +128,19 @@ JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1new
   _on_message_begin_mid = env->GetMethodID(_settings_cid, "onMessageBegin", "()I");
   assert(_on_message_begin_mid);
 
-  _on_url_mid = env->GetMethodID(_settings_cid, "onURL", "([B)I");
+  _on_url_mid = env->GetMethodID(_settings_cid, "onURL", "(II)I");
   assert(_on_url_mid);
 
-  _on_header_field_mid = env->GetMethodID(_settings_cid, "onHeaderField", "([B)I");
+  _on_header_field_mid = env->GetMethodID(_settings_cid, "onHeaderField", "(II)I");
   assert(_on_header_field_mid);
 
-  _on_header_value_mid = env->GetMethodID(_settings_cid, "onHeaderValue", "([B)I");
+  _on_header_value_mid = env->GetMethodID(_settings_cid, "onHeaderValue", "(II)I");
   assert(_on_header_value_mid);
 
   _on_headers_complete_mid = env->GetMethodID(_settings_cid, "onHeadersComplete", "()I");
   assert(_on_headers_complete_mid);
 
-  _on_body_mid = env->GetMethodID(_settings_cid, "onBody", "([B)I");
+  _on_body_mid = env->GetMethodID(_settings_cid, "onBody", "(II)I");
   assert(_on_body_mid);
 
   _on_message_complete_mid = env->GetMethodID(_settings_cid, "onMessageComplete", "()I");
@@ -150,8 +173,6 @@ JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1execute
 
   assert(ptr);
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  parser->data = env->NewGlobalRef(settings);
-  assert(parser->data);
   _env = env;
 
   http_parser_settings ps;
@@ -162,18 +183,25 @@ JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1execute
   ps.on_headers_complete = _on_headers_complete_cb;
   ps.on_body = _on_body_cb;
   ps.on_message_complete = _on_message_complete_cb;
-
+  
+  DataHolder* holder;
   size_t r;
   if (data) {
     jbyte* base = new jbyte[length];
     env->GetByteArrayRegion(data, offset, length, base);
-    r = http_parser_execute(parser, &ps, reinterpret_cast<const char*>(base), length);
+    const char* buff = reinterpret_cast<const char*>(base);
+    holder = new DataHolder(env, settings, buff);
+    parser->data = holder;
+    r = http_parser_execute(parser, &ps, buff, length);
     delete[] base;
   } else {
     jbyte* base = (jbyte*) env->GetDirectBufferAddress(buffer);
-    r = http_parser_execute(parser, &ps, reinterpret_cast<const char*>(base + offset), length);
+    const char* buff = reinterpret_cast<const char*>(base + offset);
+    holder = new DataHolder(env, settings, buff);
+    parser->data = holder;
+    r = http_parser_execute(parser, &ps, buff, length);
   }
-  env->DeleteGlobalRef((jobject) parser->data);
+  delete holder;
   parser->data = NULL;
   return r;
 }
