@@ -70,7 +70,8 @@ public class HttpTest {
             "Content-Length: 9\r\n" +
             "\r\n" +
             "some body";
-        final ByteBuffer buffer = ByteBuffer.wrap(raw.getBytes("utf-8"));
+        final byte[] data = raw.getBytes("utf-8");
+        final ByteBuffer buffer = ByteBuffer.wrap(data);
 
         final AtomicBoolean messageBeginCalled = new AtomicBoolean(false);
         final AtomicBoolean urlCalled = new AtomicBoolean(false);
@@ -89,24 +90,24 @@ public class HttpTest {
             }
 
             @Override
-            public int onURL(byte[] data) {
-                urlCalled.set(data != null && data.length > 0);
-                final String url = new String(data);
+            public int onURL(int offset, int length) {
+                urlCalled.set(offset > 0 && length > 0);
+                final String url = new String(data, offset, length);
                 System.out.println("onURL " + url);
                 Assert.assertEquals(url, "/favicon.ico");
                 return 0;
             }
 
             @Override
-            public int onHeaderField(byte[] data) {
-                System.out.println("onHeaderField " + new String(data));
-                headerFieldCalled.set(data != null && data.length > 0);
+            public int onHeaderField(int offset, int length) {
+                System.out.println("onHeaderField " + new String(data, offset, length));
+                headerFieldCalled.set(offset > 0 && length > 0);
                 return 0;
             }
 
             @Override
-            public int onHeaderValue(byte[] data) {
-                System.out.println("onHeaderValue " + new String(data));
+            public int onHeaderValue(int offset, int length) {
+                System.out.println("onHeaderValue " + new String(data, offset, length));
                 headerValueCalled.set(data != null && data.length > 0);
                 return 0;
             }
@@ -119,9 +120,9 @@ public class HttpTest {
             }
 
             @Override
-            public int onBody(byte[] data) {
-                bodyCalled.set(data != null && data.length > 0);
-                final String body = new String(data);
+            public int onBody(int offset, int length) {
+                bodyCalled.set(offset > 0 && length > 0);
+                final String body = new String(data, offset, length);
                 System.out.println("onBody " + body);
                 Assert.assertEquals(body, "some body");
                 return 0;
@@ -137,7 +138,7 @@ public class HttpTest {
 
         final HttpParser httpParser = new HttpParser();
         httpParser.init(HttpParser.Type.REQUEST);
-        httpParser.execute(settings, buffer);
+        httpParser.execute(settings, buffer, 0, buffer.limit());
 
         Assert.assertTrue(messageBeginCalled.get());
         Assert.assertTrue(urlCalled.get());
@@ -161,7 +162,8 @@ public class HttpTest {
             "Content-Length: 5\r\n" +
             "\r\n" +
             "World";
-        final ByteBuffer buffer = ByteBuffer.wrap(raw.getBytes("utf-8"));
+        final byte[] data = raw.getBytes("utf-8");
+        final ByteBuffer buffer = ByteBuffer.wrap(data);
 
         final AtomicBoolean messageBeginCalled = new AtomicBoolean(false);
         final AtomicBoolean urlCalled = new AtomicBoolean(false);
@@ -180,25 +182,25 @@ public class HttpTest {
             }
 
             @Override
-            public int onURL(byte[] data) {
-                urlCalled.set(data != null && data.length > 0);
-                final String url = new String(data);
+            public int onURL(int offset, int length) {
+                urlCalled.set(offset > 0 && length > 0);
+                final String url = new String(data, offset, length);
                 System.out.println("onURL " + url);
                 Assert.assertEquals(url, "/post_identity_body_world?q=search#hey");
                 return 0;
             }
 
             @Override
-            public int onHeaderField(byte[] data) {
-                System.out.println("onHeaderField " + new String(data));
-                headerFieldCalled.set(data != null && data.length > 0);
+            public int onHeaderField(int offset, int length) {
+                System.out.println("onHeaderField " + new String(data, offset, length));
+                headerFieldCalled.set(offset > 0 && length > 0);
                 return 0;
             }
 
             @Override
-            public int onHeaderValue(byte[] data) {
-                System.out.println("onHeaderValue " + new String(data));
-                headerValueCalled.set(data != null && data.length > 0);
+            public int onHeaderValue(int offset, int length) {
+                System.out.println("onHeaderValue " + new String(data, offset, length));
+                headerValueCalled.set(offset > 0 && length > 0);
                 return 0;
             }
 
@@ -210,9 +212,9 @@ public class HttpTest {
             }
 
             @Override
-            public int onBody(byte[] data) {
-                bodyCalled.set(data != null && data.length > 0);
-                final String body = new String(data);
+            public int onBody(int offset, int length) {
+                bodyCalled.set(offset > 0 && length > 0);
+                final String body = new String(data, offset, length);
                 System.out.println("onBody " + body);
                 Assert.assertEquals(body, "World");
                 return 0;
@@ -228,7 +230,7 @@ public class HttpTest {
 
         final HttpParser httpParser = new HttpParser();
         httpParser.init(HttpParser.Type.REQUEST);
-        httpParser.execute(settings, buffer);
+        httpParser.execute(settings, buffer, 0, buffer.limit());
 
         Assert.assertTrue(messageBeginCalled.get());
         Assert.assertTrue(urlCalled.get());
@@ -262,7 +264,8 @@ public class HttpTest {
             "The document has moved\n" +
             "<A HREF=\"http://www.google.com/\">here</A>.\r\n" +
             "</BODY></HTML>\r\n";
-        final ByteBuffer buffer = ByteBuffer.wrap(raw.getBytes("utf-8"));
+        final byte[] data = raw.getBytes("utf-8");
+        final ByteBuffer buffer = ByteBuffer.wrap(data);
 
         final AtomicBoolean messageBeginCalled = new AtomicBoolean(false);
         final AtomicBoolean urlCalled = new AtomicBoolean(false);
@@ -281,25 +284,25 @@ public class HttpTest {
             }
 
             @Override
-            public int onURL(byte[] data) {
-                urlCalled.set(data != null && data.length > 0);
-                final String url = new String(data);
+            public int onURL(int offset, int length) {
+                urlCalled.set(offset > 0 && length > 0);
+                final String url = new String(data, offset, length);
                 System.out.println("onURL " + url);
                 Assert.fail("unexpected url in response");
                 return 0;
             }
 
             @Override
-            public int onHeaderField(byte[] data) {
-                System.out.println("onHeaderField " + new String(data));
-                headerFieldCalled.set(data != null && data.length > 0);
+            public int onHeaderField(int offset, int length) {
+                System.out.println("onHeaderField " + new String(data, offset, length));
+                headerFieldCalled.set(offset > 0 && length > 0);
                 return 0;
             }
 
             @Override
-            public int onHeaderValue(byte[] data) {
-                System.out.println("onHeaderValue " + new String(data));
-                headerValueCalled.set(data != null && data.length > 0);
+            public int onHeaderValue(int offset, int length) {
+                System.out.println("onHeaderValue " + new String(data, offset, length));
+                headerValueCalled.set(offset > 0 && length > 0);
                 return 0;
             }
 
@@ -311,9 +314,9 @@ public class HttpTest {
             }
 
             @Override
-            public int onBody(byte[] data) {
-                bodyCalled.set(data != null && data.length > 0);
-                final String body = new String(data);
+            public int onBody(int offset, int length) {
+                bodyCalled.set(offset > 0 && length > 0);
+                final String body = new String(data, offset, length);
                 System.out.println("onBody " + body);
                 Assert.assertEquals(body,
                     "<HTML><HEAD><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n" +
@@ -335,7 +338,7 @@ public class HttpTest {
 
         final HttpParser httpParser = new HttpParser();
         httpParser.init(HttpParser.Type.RESPONSE);
-        httpParser.execute(settings, buffer);
+        httpParser.execute(settings, buffer, 0, buffer.limit());
 
         Assert.assertTrue(messageBeginCalled.get());
         Assert.assertFalse(urlCalled.get());
