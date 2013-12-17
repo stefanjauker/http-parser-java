@@ -77,6 +77,10 @@ public final class HttpParser {
     public String errnoName() {
         return _errno_name(pointer);
     }
+    
+    public void free() {
+        _free(pointer);
+    }
 
     public short statusCode() {
         return _status_code(pointer);
@@ -138,4 +142,6 @@ public final class HttpParser {
     private native String _errno_name(final long pointer);
 
     private native short _status_code(final long pointer);
+    
+    private native void _free(final long pointer);
 }

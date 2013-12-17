@@ -27,23 +27,11 @@ package net.java.httpparser;
 
 public abstract class HttpParserSettings {
 
-    public int onMessageBegin() {
+    public int onHeadersComplete(String url, String[] headers) {
         return 0;
     }
-
-    public int onURL(int offset, int length) {
-        return 0;
-    }
-
-    public int onHeaderField(int offset, int length) {
-        return 0;
-    }
-
-    public int onHeaderValue(int offset, int length) {
-        return 0;
-    }
-
-    public int onHeadersComplete() {
+    
+    public int onHeaders(String url, String[] headers) {
         return 0;
     }
 

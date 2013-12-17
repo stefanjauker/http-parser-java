@@ -73,49 +73,21 @@ public class HttpTest {
         final byte[] data = raw.getBytes("utf-8");
         final ByteBuffer buffer = ByteBuffer.wrap(data);
 
-        final AtomicBoolean messageBeginCalled = new AtomicBoolean(false);
-        final AtomicBoolean urlCalled = new AtomicBoolean(false);
-        final AtomicBoolean headerFieldCalled = new AtomicBoolean(false);
-        final AtomicBoolean headerValueCalled = new AtomicBoolean(false);
         final AtomicBoolean headersCompleteCalled = new AtomicBoolean(false);
         final AtomicBoolean bodyCalled = new AtomicBoolean(false);
         final AtomicBoolean messageCompleteCalled = new AtomicBoolean(false);
 
         final HttpParserSettings settings = new HttpParserSettings() {
             @Override
-            public int onMessageBegin() {
-                System.out.println("onMessageBegin");
-                messageBeginCalled.set(true);
-                return 0;
-            }
-
-            @Override
-            public int onURL(int offset, int length) {
-                urlCalled.set(offset > 0 && length > 0);
-                final String url = new String(data, offset, length);
-                System.out.println("onURL " + url);
-                Assert.assertEquals(url, "/favicon.ico");
-                return 0;
-            }
-
-            @Override
-            public int onHeaderField(int offset, int length) {
-                System.out.println("onHeaderField " + new String(data, offset, length));
-                headerFieldCalled.set(offset > 0 && length > 0);
-                return 0;
-            }
-
-            @Override
-            public int onHeaderValue(int offset, int length) {
-                System.out.println("onHeaderValue " + new String(data, offset, length));
-                headerValueCalled.set(data != null && data.length > 0);
-                return 0;
-            }
-
-            @Override
-            public int onHeadersComplete() {
+            public int onHeadersComplete(String url, String[] headers) {
                 System.out.println("onHeadersComplete");
                 headersCompleteCalled.set(true);
+                System.out.println("onURL " + url);
+                Assert.assertEquals(url, "/favicon.ico");
+                Assert.assertNotNull(headers);
+                for (int i=0; i < headers.length; i+=2) {
+                    System.out.println("  " + headers[i] + ": " + headers[i+1]);
+                }
                 return 0;
             }
 
@@ -140,10 +112,6 @@ public class HttpTest {
         httpParser.init(HttpParser.Type.REQUEST);
         httpParser.execute(settings, buffer, 0, buffer.limit());
 
-        Assert.assertTrue(messageBeginCalled.get());
-        Assert.assertTrue(urlCalled.get());
-        Assert.assertTrue(headerFieldCalled.get());
-        Assert.assertTrue(headerValueCalled.get());
         Assert.assertTrue(headersCompleteCalled.get());
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
@@ -165,49 +133,20 @@ public class HttpTest {
         final byte[] data = raw.getBytes("utf-8");
         final ByteBuffer buffer = ByteBuffer.wrap(data);
 
-        final AtomicBoolean messageBeginCalled = new AtomicBoolean(false);
-        final AtomicBoolean urlCalled = new AtomicBoolean(false);
-        final AtomicBoolean headerFieldCalled = new AtomicBoolean(false);
-        final AtomicBoolean headerValueCalled = new AtomicBoolean(false);
         final AtomicBoolean headersCompleteCalled = new AtomicBoolean(false);
         final AtomicBoolean bodyCalled = new AtomicBoolean(false);
         final AtomicBoolean messageCompleteCalled = new AtomicBoolean(false);
 
         final HttpParserSettings settings = new HttpParserSettings() {
-            @Override
-            public int onMessageBegin() {
-                System.out.println("onMessageBegin");
-                messageBeginCalled.set(true);
-                return 0;
-            }
-
-            @Override
-            public int onURL(int offset, int length) {
-                urlCalled.set(offset > 0 && length > 0);
-                final String url = new String(data, offset, length);
-                System.out.println("onURL " + url);
-                Assert.assertEquals(url, "/post_identity_body_world?q=search#hey");
-                return 0;
-            }
-
-            @Override
-            public int onHeaderField(int offset, int length) {
-                System.out.println("onHeaderField " + new String(data, offset, length));
-                headerFieldCalled.set(offset > 0 && length > 0);
-                return 0;
-            }
-
-            @Override
-            public int onHeaderValue(int offset, int length) {
-                System.out.println("onHeaderValue " + new String(data, offset, length));
-                headerValueCalled.set(offset > 0 && length > 0);
-                return 0;
-            }
-
-            @Override
-            public int onHeadersComplete() {
+            public int onHeadersComplete(String url, String[] headers) {
                 System.out.println("onHeadersComplete");
                 headersCompleteCalled.set(true);
+                System.out.println("onURL " + url);
+                Assert.assertEquals(url, "/post_identity_body_world?q=search#hey");
+                Assert.assertNotNull(headers);
+                for (int i=0; i < headers.length; i+=2) {
+                    System.out.println("  " + headers[i] + ": " + headers[i+1]);
+                }
                 return 0;
             }
 
@@ -232,10 +171,6 @@ public class HttpTest {
         httpParser.init(HttpParser.Type.REQUEST);
         httpParser.execute(settings, buffer, 0, buffer.limit());
 
-        Assert.assertTrue(messageBeginCalled.get());
-        Assert.assertTrue(urlCalled.get());
-        Assert.assertTrue(headerFieldCalled.get());
-        Assert.assertTrue(headerValueCalled.get());
         Assert.assertTrue(headersCompleteCalled.get());
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
@@ -267,49 +202,19 @@ public class HttpTest {
         final byte[] data = raw.getBytes("utf-8");
         final ByteBuffer buffer = ByteBuffer.wrap(data);
 
-        final AtomicBoolean messageBeginCalled = new AtomicBoolean(false);
-        final AtomicBoolean urlCalled = new AtomicBoolean(false);
-        final AtomicBoolean headerFieldCalled = new AtomicBoolean(false);
-        final AtomicBoolean headerValueCalled = new AtomicBoolean(false);
         final AtomicBoolean headersCompleteCalled = new AtomicBoolean(false);
         final AtomicBoolean bodyCalled = new AtomicBoolean(false);
         final AtomicBoolean messageCompleteCalled = new AtomicBoolean(false);
 
         final HttpParserSettings settings = new HttpParserSettings() {
             @Override
-            public int onMessageBegin() {
-                System.out.println("onMessageBegin");
-                messageBeginCalled.set(true);
-                return 0;
-            }
-
-            @Override
-            public int onURL(int offset, int length) {
-                urlCalled.set(offset > 0 && length > 0);
-                final String url = new String(data, offset, length);
-                System.out.println("onURL " + url);
-                Assert.fail("unexpected url in response");
-                return 0;
-            }
-
-            @Override
-            public int onHeaderField(int offset, int length) {
-                System.out.println("onHeaderField " + new String(data, offset, length));
-                headerFieldCalled.set(offset > 0 && length > 0);
-                return 0;
-            }
-
-            @Override
-            public int onHeaderValue(int offset, int length) {
-                System.out.println("onHeaderValue " + new String(data, offset, length));
-                headerValueCalled.set(offset > 0 && length > 0);
-                return 0;
-            }
-
-            @Override
-            public int onHeadersComplete() {
+            public int onHeadersComplete(String url, String[] headers) {
                 System.out.println("onHeadersComplete");
                 headersCompleteCalled.set(true);
+                Assert.assertNotNull(headers);
+                for (int i=0; i < headers.length; i+=2) {
+                    System.out.println("  " + headers[i] + ": " + headers[i+1]);
+                }
                 return 0;
             }
 
@@ -340,10 +245,6 @@ public class HttpTest {
         httpParser.init(HttpParser.Type.RESPONSE);
         httpParser.execute(settings, buffer, 0, buffer.limit());
 
-        Assert.assertTrue(messageBeginCalled.get());
-        Assert.assertFalse(urlCalled.get());
-        Assert.assertTrue(headerFieldCalled.get());
-        Assert.assertTrue(headerValueCalled.get());
         Assert.assertTrue(headersCompleteCalled.get());
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
