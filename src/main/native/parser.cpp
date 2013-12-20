@@ -27,7 +27,7 @@
 #include <string.h>
 
 #include <string>
-#include <vector>
+#include <vector.h>
 
 #include "http_parser.h"
 #include "net_java_httpparser_HttpParser.h"
@@ -65,15 +65,15 @@ class DataHolder {
    inline void set_data(const char* data) { _data = data; }
    inline string& url() { return _url; }
    inline int on_message_begin() { _url.clear(); return 0; }
-   void push_header_key(const string& key);
-   void push_header_value(const string& value);
+   void push_header_key(string* key);
+   void push_header_value(string* value);
    int on_headers_complete();
    void on_message_complete();
    DataHolder(JNIEnv* env, jobject settings, const char* data);
    ~DataHolder();
 };
 
-DataHolder::DataHolder(JNIEnv* env, jobject settings, const char* data) {
+DataHolder::DataHolder(JNIEnv* env, jobject settings, const char* data) : _headers(64) {
   assert(env);
   assert(settings);
   assert(data);
@@ -88,21 +88,27 @@ DataHolder::~DataHolder() {
  _env->DeleteGlobalRef(_settings);
 }
 
-void DataHolder::push_header_key(const string& key) {
+void DataHolder::push_header_key(string* key) {
+  assert(key);
   if (_hkeys == _hvalues) { // new field
     _hkeys++;
     _headers.push_back(key);
   } else { // truncated field
-    _headers.at(_headers.size() - 1).append(key);
+    string* last = _headers.at(_headers.size() - 1);
+    assert(last);
+    last->append(*key);
   }
 }
 
-void DataHolder::push_header_value(const string& value) {
+void DataHolder::push_header_value(string* value) {
+  assert(value);
   if (_hvalues != _hkeys) { // new value
     _hvalues++;
     _headers.push_back(value);
   } else { // truncated value
-    _headers.at(_headers.size() - 1).append(value);
+    string* last = _headers.at(_headers.size() - 1);
+    assert(last);
+    last->append(*value);
   }
 }
 
@@ -120,8 +126,8 @@ int DataHolder::send_headers(jmethodID mid) {
   int size = static_cast<int>(_headers.size());
   jobjectArray headers = _env->NewObjectArray(size, _string_cid, 0);
   for (int i = 0; i < size - 1; i+=2) {
-    jstring field = _env->NewStringUTF(_headers.at(i).data());
-    jstring value = _env->NewStringUTF(_headers.at(i+1).data());
+    jstring field = _env->NewStringUTF(_headers.at(i)->data());
+    jstring value = _env->NewStringUTF(_headers.at(i+1)->data());
     _env->SetObjectArrayElement(headers, i, field);
     _env->SetObjectArrayElement(headers, i+1, value);
   }
@@ -166,14 +172,14 @@ static int _on_url_cb(http_parser* parser, const char* at, size_t length) {
 static int _on_header_field_cb(http_parser* parser, const char* at, size_t length) {
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
-  holder->push_header_key(string(at, length));
+  holder->push_header_key(new string(at, length));
   return 0;
 }
 
 static int _on_header_value_cb(http_parser* parser, const char* at, size_t length) {
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
-  holder->push_header_value(string(at, length));
+  holder->push_header_value(new string(at, length));
   return 0;
 }
 
