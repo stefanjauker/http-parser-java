@@ -23,7 +23,7 @@
  * questions.
  */
 
-import net.java.httpparser.HttpParser;
+import com.oracle.httpparser.HttpParser;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;

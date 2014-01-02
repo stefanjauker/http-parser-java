@@ -22,7 +22,7 @@
 
     <target name="javah" depends="compile">
         <javah destdir="${native.build.dir}" classpath="${classes.dir}">
-            <class name="net.java.httpparser.HttpParser"/>
+            <class name="com.oracle.httpparser.HttpParser"/>
         </javah>
     </target>
 

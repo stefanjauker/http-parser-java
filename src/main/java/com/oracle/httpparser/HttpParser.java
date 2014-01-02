@@ -23,7 +23,7 @@
  * questions.
  */
 
-package net.java.httpparser;
+package com.oracle.httpparser;
 
 import java.nio.ByteBuffer;
 
@@ -77,7 +77,7 @@ public final class HttpParser {
     public String errnoName() {
         return _errno_name(pointer);
     }
-    
+
     public void free() {
         _free(pointer);
     }
@@ -86,7 +86,7 @@ public final class HttpParser {
         return _status_code(pointer);
     }
 
-    public long execute(final HttpParserSettings settings, final ByteBuffer buffer, 
+    public long execute(final HttpParserSettings settings, final ByteBuffer buffer,
             final int offset, final int length) {
         return buffer.hasArray() ?
                 _execute(pointer, settings, buffer, buffer.array(), offset, length) :
@@ -142,6 +142,6 @@ public final class HttpParser {
     private native String _errno_name(final long pointer);
 
     private native short _status_code(final long pointer);
-    
+
     private native void _free(final long pointer);
 }

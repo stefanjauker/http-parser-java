@@ -30,7 +30,7 @@
 #include <vector.h>
 
 #include "http_parser.h"
-#include "net_java_httpparser_HttpParser.h"
+#include "com_oracle_httpparser_HttpParser.h"
 
 #if _MSC_VER
 #define snprintf _snprintf
@@ -201,18 +201,18 @@ static int _on_message_complete_cb(http_parser* parser) {
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _new
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1new
+JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1new
   (JNIEnv *env, jclass cls) {
 
   _string_cid = env->FindClass("java/lang/String");
   assert(_string_cid);
   _string_cid = (jclass) env->NewGlobalRef(_string_cid);
 
-  _settings_cid = env->FindClass("net/java/httpparser/HttpParserSettings");
+  _settings_cid = env->FindClass("com/oracle/httpparser/HttpParserSettings");
   assert(_settings_cid);
   _settings_cid = (jclass) env->NewGlobalRef(_settings_cid);
   assert(_settings_cid);
@@ -234,11 +234,11 @@ JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1new
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _init
  * Signature: (JI)V
  */
-JNIEXPORT void JNICALL Java_net_java_httpparser_HttpParser__1init
+JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1init
   (JNIEnv *env, jobject that, jlong ptr, jint type) {
 
   assert(ptr);
@@ -247,11 +247,11 @@ JNIEXPORT void JNICALL Java_net_java_httpparser_HttpParser__1init
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _execute
- * Signature: (JLnet/java/httpparser/HttpParserSettings;Ljava/nio/ByteBuffer;[BII)J
+ * Signature: (JLcom/oracle/httpparser/HttpParserSettings;Ljava/nio/ByteBuffer;[BII)J
  */
-JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1execute
+JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1execute
   (JNIEnv *env, jobject that, jlong ptr, jobject settings, jobject buffer, jbyteArray data, jint offset, jint length) {
 
   assert(ptr);
@@ -297,11 +297,11 @@ JNIEXPORT jlong JNICALL Java_net_java_httpparser_HttpParser__1execute
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _should_keep_alive
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL Java_net_java_httpparser_HttpParser__1should_1keep_1alive
+JNIEXPORT jboolean JNICALL Java_com_oracle_httpparser_HttpParser__1should_1keep_1alive
   (JNIEnv *env, jobject that, jlong ptr) {
 
   assert(ptr);
@@ -310,11 +310,11 @@ JNIEXPORT jboolean JNICALL Java_net_java_httpparser_HttpParser__1should_1keep_1a
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _upgrade
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL Java_net_java_httpparser_HttpParser__1upgrade
+JNIEXPORT jboolean JNICALL Java_com_oracle_httpparser_HttpParser__1upgrade
   (JNIEnv *env, jobject that, jlong ptr) {
 
   assert(ptr);
@@ -323,11 +323,11 @@ JNIEXPORT jboolean JNICALL Java_net_java_httpparser_HttpParser__1upgrade
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _destroy
  * Signature: (J)
  */
-JNIEXPORT void JNICALL Java_net_java_httpparser_HttpParser__1destroy
+JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1destroy
   (JNIEnv *env, jobject that, jlong ptr) {
 
   assert(ptr);
@@ -336,33 +336,33 @@ JNIEXPORT void JNICALL Java_net_java_httpparser_HttpParser__1destroy
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _minor
  * Signature: (J)S
  */
-JNIEXPORT jshort JNICALL Java_net_java_httpparser_HttpParser__1minor
+JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1minor
   (JNIEnv *env, jobject that, jlong ptr) {
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
   return parser->http_minor;
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _major
  * Signature: (J)S
  */
-JNIEXPORT jshort JNICALL Java_net_java_httpparser_HttpParser__1major
+JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1major
   (JNIEnv *env, jobject that, jlong ptr) {
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
   return parser->http_major;
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _method
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_net_java_httpparser_HttpParser__1method
+JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1method
   (JNIEnv *env, jobject that, jlong ptr) {
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
   return env->NewStringUTF(http_method_str((http_method) parser->method));
@@ -370,11 +370,11 @@ JNIEXPORT jstring JNICALL Java_net_java_httpparser_HttpParser__1method
 
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _errno_name
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_net_java_httpparser_HttpParser__1errno_1name
+JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1errno_1name
   (JNIEnv *env, jobject that, jlong ptr) {
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
   enum http_errno err = HTTP_PARSER_ERRNO(parser);
@@ -382,22 +382,22 @@ JNIEXPORT jstring JNICALL Java_net_java_httpparser_HttpParser__1errno_1name
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _status_code
  * Signature: (J)S;
  */
-JNIEXPORT jshort JNICALL Java_net_java_httpparser_HttpParser__1status_1code
+JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1status_1code
   (JNIEnv *env, jobject that, jlong ptr) {
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
   return parser->status_code;
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _version
  * Signature: ()Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_net_java_httpparser_HttpParser__1version
+JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1version
   (JNIEnv *env, jobject that) {
 
   char version[32];
@@ -407,11 +407,11 @@ JNIEXPORT jstring JNICALL Java_net_java_httpparser_HttpParser__1version
 }
 
 /*
- * Class:     net_java_httpparser_HttpParser
+ * Class:     com_oracle_httpparser_HttpParser
  * Method:    _free
  * Signature: (J)
  */
-JNIEXPORT void JNICALL Java_net_java_httpparser_HttpParser__1free
+JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1free
   (JNIEnv *env, jobject that, jlong ptr) {
   http_parser* parser = reinterpret_cast<http_parser*>(ptr);
   if(parser->data != NULL) {

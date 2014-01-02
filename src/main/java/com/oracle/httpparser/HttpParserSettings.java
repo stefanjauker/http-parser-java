@@ -23,14 +23,14 @@
  * questions.
  */
 
-package net.java.httpparser;
+package com.oracle.httpparser;
 
 public abstract class HttpParserSettings {
 
     public int onHeadersComplete(String url, String[] headers) {
         return 0;
     }
-    
+
     public int onHeaders(String url, String[] headers) {
         return 0;
     }

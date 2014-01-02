@@ -44,8 +44,8 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import net.java.httpparser.HttpParserSettings;
-import net.java.httpparser.HttpParser;
+import com.oracle.httpparser.HttpParserSettings;
+import com.oracle.httpparser.HttpParser;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
