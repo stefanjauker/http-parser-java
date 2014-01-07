@@ -420,3 +420,14 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1free
     delete holder;
   }
 }
+
+/*
+ * Class:     com_oracle_httpparser_HttpParser
+ * Method:    _pause
+ * Signature: (JZ)
+ */
+JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1pause
+  (JNIEnv *env, jobject that, jlong ptr, jboolean should_pause) {
+  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
+  http_parser_pause(parser, should_pause);
+}

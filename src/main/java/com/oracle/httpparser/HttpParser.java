@@ -108,6 +108,14 @@ public final class HttpParser {
         }
     }
 
+    public void pause() {
+       _pause(pointer, true);
+    }
+
+    public void resume() {
+       _pause(pointer, false);
+    }
+
     @Override
     protected void finalize() throws Throwable {
         destroy();
@@ -144,4 +152,6 @@ public final class HttpParser {
     private native short _status_code(final long pointer);
 
     private native void _free(final long pointer);
+
+    private native void _pause(final long pointer, final boolean should_pause);    
 }
