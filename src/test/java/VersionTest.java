@@ -30,6 +30,10 @@ import org.testng.annotations.Test;
 
 public class VersionTest {
 
+    static {
+        System.loadLibrary("avatar-js");
+    }
+
     private static HttpParser httpParser = new HttpParser();
 
     @Test

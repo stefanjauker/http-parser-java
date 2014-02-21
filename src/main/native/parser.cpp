@@ -51,41 +51,46 @@ class DataHolder {
    jobject _settings;
    const char* _data;
    JNIEnv* _env;
-
    string _url;
    vector<string> _headers;
    int _hkeys;
    int _hvalues;
+   struct http_parser _parser;
 
    int send_headers(jmethodID mid);
 
  public:
    inline jobject settings() { return _settings; }
+   inline void set_settings(jobject settings) { _settings = (jobject) _env->NewGlobalRef(settings); }
    inline const char* data() { return _data; }
    inline void set_data(const char* data) { _data = data; }
    inline string& url() { return _url; }
    inline int on_message_begin() { _url.clear(); return 0; }
+   inline http_parser* parser() { return &_parser; }
+   inline void init(http_parser_type type) { http_parser_init(&_parser, type); }
+
    void push_header_key(string* key);
    void push_header_value(string* value);
    int on_headers_complete();
    void on_message_complete();
-   DataHolder(JNIEnv* env, jobject settings, const char* data);
+
+   DataHolder(JNIEnv* env);
    ~DataHolder();
 };
 
-DataHolder::DataHolder(JNIEnv* env, jobject settings, const char* data) : _headers(64) {
+DataHolder::DataHolder(JNIEnv* env) : _headers(64) {
   assert(env);
-  assert(settings);
-  assert(data);
   _env = env;
-  _settings = (jobject) _env->NewGlobalRef(settings);
-  _data = data;
+  _settings = NULL;
+  _data = NULL;
   _hkeys = 0;
   _hvalues = 0;
+  _parser.data = this;
 }
 
 DataHolder::~DataHolder() {
- _env->DeleteGlobalRef(_settings);
+  assert(_settings);
+  _env->DeleteGlobalRef(_settings);
 }
 
 void DataHolder::push_header_key(string* key) {
@@ -202,10 +207,10 @@ static int _on_message_complete_cb(http_parser* parser) {
 
 /*
  * Class:     com_oracle_httpparser_HttpParser
- * Method:    _new
- * Signature: ()J
+ * Method:    _static_initialize
+ * Signature: ()V
  */
-JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1new
+JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1static_1initialize
   (JNIEnv *env, jclass cls) {
 
   _string_cid = env->FindClass("java/lang/String");
@@ -228,9 +233,19 @@ JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1new
 
   _on_message_complete_mid = env->GetMethodID(_settings_cid, "onMessageComplete", "()I");
   assert(_on_message_complete_mid);
+}
 
-  http_parser* parser = new http_parser();
-  return reinterpret_cast<jlong>(parser);
+/*
+ * Class:     com_oracle_httpparser_HttpParser
+ * Method:    _new
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1new
+  (JNIEnv *env, jclass cls) {
+
+  _env = env;
+  DataHolder* holder = new DataHolder(env);
+  return reinterpret_cast<jlong>(holder);
 }
 
 /*
@@ -242,8 +257,8 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1init
   (JNIEnv *env, jobject that, jlong ptr, jint type) {
 
   assert(ptr);
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  http_parser_init(parser, (http_parser_type) type);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  holder->init((http_parser_type) type);
 }
 
 /*
@@ -252,11 +267,11 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1init
  * Signature: (JLcom/oracle/httpparser/HttpParserSettings;Ljava/nio/ByteBuffer;[BII)J
  */
 JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1execute
-  (JNIEnv *env, jobject that, jlong ptr, jobject settings, jobject buffer, jbyteArray data, jint offset, jint length) {
+  (JNIEnv *env, jobject that, jlong ptr, jobject settings, jobject buffer, jbyteArray bytes, jint offset, jint length) {
 
   assert(ptr);
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  _env = env;
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  holder->set_settings(settings);
 
   http_parser_settings ps;
   ps.on_message_begin = _on_message_begin_cb;
@@ -268,30 +283,18 @@ JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1execute
   ps.on_message_complete = _on_message_complete_cb;
 
   size_t r;
-  if (data) {
+  if (bytes) {
     jbyte* base = new jbyte[length];
-    env->GetByteArrayRegion(data, offset, length, base);
+    env->GetByteArrayRegion(bytes, offset, length, base);
     const char* buff = reinterpret_cast<const char*>(base);
-    if(parser->data != NULL) {
-      DataHolder* holder =(DataHolder*) parser->data;
-      holder->set_data(buff);
-    } else {
-      DataHolder* holder = new DataHolder(env, settings, buff);
-      parser->data = holder;
-    }
-    r = http_parser_execute(parser, &ps, buff, length);
+    holder->set_data(buff);
+    r = http_parser_execute(holder->parser(), &ps, buff, length);
     delete[] base;
   } else {
     jbyte* base = (jbyte*) env->GetDirectBufferAddress(buffer);
     const char* buff = reinterpret_cast<const char*>(base + offset);
-    if(parser->data != NULL) {
-      DataHolder* holder =(DataHolder*) parser->data;
-      holder->set_data(buff);
-    } else {
-      DataHolder* holder = new DataHolder(env, settings, buff);
-      parser->data = holder;
-    }
-    r = http_parser_execute(parser, &ps, buff, length);
+    holder->set_data(buff);
+    r = http_parser_execute(holder->parser(), &ps, buff, length);
   }
   return r;
 }
@@ -305,8 +308,8 @@ JNIEXPORT jboolean JNICALL Java_com_oracle_httpparser_HttpParser__1should_1keep_
   (JNIEnv *env, jobject that, jlong ptr) {
 
   assert(ptr);
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  return http_should_keep_alive(parser) ? JNI_TRUE : JNI_FALSE;
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  return http_should_keep_alive(holder->parser()) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -318,8 +321,8 @@ JNIEXPORT jboolean JNICALL Java_com_oracle_httpparser_HttpParser__1upgrade
   (JNIEnv *env, jobject that, jlong ptr) {
 
   assert(ptr);
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  return parser->upgrade ? JNI_TRUE : JNI_FALSE;
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  return holder->parser()->upgrade ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -331,8 +334,8 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1destroy
   (JNIEnv *env, jobject that, jlong ptr) {
 
   assert(ptr);
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  delete parser;
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  delete holder;
 }
 
 /*
@@ -342,8 +345,10 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1destroy
  */
 JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1minor
   (JNIEnv *env, jobject that, jlong ptr) {
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  return parser->http_minor;
+
+  assert(ptr);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  return holder->parser()->http_minor;
 }
 
 /*
@@ -353,8 +358,10 @@ JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1minor
  */
 JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1major
   (JNIEnv *env, jobject that, jlong ptr) {
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  return parser->http_major;
+
+  assert(ptr);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  return holder->parser()->http_major;
 }
 
 /*
@@ -364,8 +371,10 @@ JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1major
  */
 JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1method
   (JNIEnv *env, jobject that, jlong ptr) {
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  return env->NewStringUTF(http_method_str((http_method) parser->method));
+
+  assert(ptr);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  return env->NewStringUTF(http_method_str((http_method) holder->parser()->method));
 }
 
 
@@ -376,8 +385,10 @@ JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1method
  */
 JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1errno_1name
   (JNIEnv *env, jobject that, jlong ptr) {
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  enum http_errno err = HTTP_PARSER_ERRNO(parser);
+
+  assert(ptr);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  enum http_errno err = HTTP_PARSER_ERRNO(holder->parser());
   return env->NewStringUTF(http_errno_name(err));
 }
 
@@ -388,8 +399,10 @@ JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1errno_1name
  */
 JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1status_1code
   (JNIEnv *env, jobject that, jlong ptr) {
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  return parser->status_code;
+
+  assert(ptr);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  return holder->parser()->status_code;
 }
 
 /*
@@ -413,12 +426,10 @@ JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1version
  */
 JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1free
   (JNIEnv *env, jobject that, jlong ptr) {
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  if(parser->data != NULL) {
-    DataHolder* holder = (DataHolder*)parser->data;
-    parser->data = NULL;
-    delete holder;
-  }
+
+  assert(ptr);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  holder->set_data(NULL);
 }
 
 /*
@@ -428,6 +439,8 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1free
  */
 JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1pause
   (JNIEnv *env, jobject that, jlong ptr, jboolean should_pause) {
-  http_parser* parser = reinterpret_cast<http_parser*>(ptr);
-  http_parser_pause(parser, should_pause);
+
+  assert(ptr);
+  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
+  http_parser_pause(holder->parser(), should_pause);
 }

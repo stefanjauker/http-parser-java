@@ -29,6 +29,10 @@ import java.nio.ByteBuffer;
 
 public final class HttpParser {
 
+    static {
+        _static_initialize();
+    }
+
     public enum Type {
         // must be equal to enum http_parser_type values in http_parser.h
         REQUEST(0),
@@ -44,10 +48,6 @@ public final class HttpParser {
 
     private final long pointer;
     private boolean destroyed;
-
-    static {
-        System.loadLibrary("avatar-js");
-    }
 
     public HttpParser() {
         pointer = _new();
@@ -122,6 +122,8 @@ public final class HttpParser {
         super.finalize();
     }
 
+    private static native void _static_initialize();
+
     private static native long _new();
 
     private native void _init(final long pointer, final int type);
@@ -153,5 +155,5 @@ public final class HttpParser {
 
     private native void _free(final long pointer);
 
-    private native void _pause(final long pointer, final boolean should_pause);    
+    private native void _pause(final long pointer, final boolean should_pause);
 }

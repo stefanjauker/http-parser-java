@@ -55,6 +55,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class HttpTest {
 
+    static {
+        System.loadLibrary("avatar-js");
+    }
+
     @Test
     public void testFirefoxGet() throws UnsupportedEncodingException {
         final String raw =
