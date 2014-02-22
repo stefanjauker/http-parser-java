@@ -62,6 +62,7 @@ class DataHolder {
  public:
    inline jobject settings() { return _settings; }
    inline void set_settings(jobject settings) { _settings = (jobject) _env->NewGlobalRef(settings); }
+   inline void clear_settings() { _env->DeleteGlobalRef(_settings); }
    inline const char* data() { return _data; }
    inline void set_data(const char* data) { _data = data; }
    inline string& url() { return _url; }
@@ -76,6 +77,7 @@ class DataHolder {
 
    DataHolder(JNIEnv* env);
    ~DataHolder();
+   void clear();
 };
 
 DataHolder::DataHolder(JNIEnv* env) : _headers(64) {
@@ -89,8 +91,12 @@ DataHolder::DataHolder(JNIEnv* env) : _headers(64) {
 }
 
 DataHolder::~DataHolder() {
-  assert(_settings);
-  _env->DeleteGlobalRef(_settings);
+}
+
+void DataHolder::clear() {
+  _settings = NULL;
+  _data = NULL;
+  _url.clear();
 }
 
 void DataHolder::push_header_key(string* key) {
@@ -170,7 +176,7 @@ static int _on_message_begin_cb(http_parser* parser) {
 static int _on_url_cb(http_parser* parser, const char* at, size_t length) {
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
-  holder->url().append(string(at, length));
+  holder->url().append(at, length);
   return 0;
 }
 
@@ -296,6 +302,7 @@ JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1execute
     holder->set_data(buff);
     r = http_parser_execute(holder->parser(), &ps, buff, length);
   }
+  holder->clear_settings();
   return r;
 }
 
@@ -429,7 +436,7 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1free
 
   assert(ptr);
   DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
-  holder->set_data(NULL);
+  holder->clear();
 }
 
 /*
