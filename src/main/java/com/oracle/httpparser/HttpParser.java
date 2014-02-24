@@ -58,18 +58,6 @@ public final class HttpParser {
         _init(pointer, type.value);
     }
 
-    public short minor() {
-        return _minor(pointer);
-    }
-
-    public short major() {
-        return _major(pointer);
-    }
-
-    public String method() {
-        return _method(pointer);
-    }
-
     public String version() {
         return _version();
     }
@@ -82,19 +70,11 @@ public final class HttpParser {
         _free(pointer);
     }
 
-    public short statusCode() {
-        return _status_code(pointer);
-    }
-
     public long execute(final HttpParserSettings settings, final ByteBuffer buffer,
             final int offset, final int length) {
         return buffer.hasArray() ?
                 _execute(pointer, settings, buffer, buffer.array(), offset, length) :
                 _execute(pointer, settings, buffer, null, offset, length);
-    }
-
-    public boolean shouldKeepAlive() {
-        return _should_keep_alive(pointer);
     }
 
     public boolean upgrade() {
@@ -137,21 +117,11 @@ public final class HttpParser {
 
     private native String _version();
 
-    private native boolean _should_keep_alive(final long pointer);
-
     private native boolean _upgrade(final long pointer);
 
     private native void _destroy(final long pointer);
 
-    private native short _minor(final long pointer);
-
-    private native short _major(final long pointer);
-
-    private native String _method(final long pointer);
-
     private native String _errno_name(final long pointer);
-
-    private native short _status_code(final long pointer);
 
     private native void _free(final long pointer);
 

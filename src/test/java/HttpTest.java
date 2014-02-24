@@ -83,15 +83,23 @@ public class HttpTest {
 
         final HttpParserSettings settings = new HttpParserSettings() {
             @Override
-            public int onHeadersComplete(String url, String[] headers) {
-                System.out.println("onHeadersComplete");
+            public int onHeadersComplete(String url,
+                                         String[] headers,
+                                         String method,
+                                         int status,
+                                         int httpVersionMajor,
+                                         int httpVersionMinor,
+                                         boolean shouldKeepAlive,
+                                         boolean upgrade) {
                 headersCompleteCalled.set(true);
-                System.out.println("onURL " + url);
                 Assert.assertEquals(url, "/favicon.ico");
                 Assert.assertNotNull(headers);
-                for (int i=0; i < headers.length; i+=2) {
-                    System.out.println("  " + headers[i] + ": " + headers[i+1]);
-                }
+                Assert.assertEquals(headers.length, 18);
+                Assert.assertEquals(method, "GET");
+                Assert.assertEquals(httpVersionMajor, 1);
+                Assert.assertEquals(httpVersionMinor, 1);
+                Assert.assertTrue(shouldKeepAlive);
+                Assert.assertFalse(upgrade);
                 return 0;
             }
 
@@ -99,14 +107,12 @@ public class HttpTest {
             public int onBody(int offset, int length) {
                 bodyCalled.set(offset > 0 && length > 0);
                 final String body = new String(data, offset, length);
-                System.out.println("onBody " + body);
                 Assert.assertEquals(body, "some body");
                 return 0;
             }
 
             @Override
             public int onMessageComplete() {
-                System.out.println("onMessageComplete");
                 messageCompleteCalled.set(true);
                 return 0;
             }
@@ -119,8 +125,6 @@ public class HttpTest {
         Assert.assertTrue(headersCompleteCalled.get());
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
-
-        Assert.assertTrue(httpParser.shouldKeepAlive());
 
         httpParser.destroy();
     }
@@ -142,15 +146,23 @@ public class HttpTest {
         final AtomicBoolean messageCompleteCalled = new AtomicBoolean(false);
 
         final HttpParserSettings settings = new HttpParserSettings() {
-            public int onHeadersComplete(String url, String[] headers) {
-                System.out.println("onHeadersComplete");
+            public int onHeadersComplete(String url,
+                                         String[] headers,
+                                         String method,
+                                         int status,
+                                         int httpVersionMajor,
+                                         int httpVersionMinor,
+                                         boolean shouldKeepAlive,
+                                         boolean upgrade) {
                 headersCompleteCalled.set(true);
-                System.out.println("onURL " + url);
                 Assert.assertEquals(url, "/post_identity_body_world?q=search#hey");
                 Assert.assertNotNull(headers);
-                for (int i=0; i < headers.length; i+=2) {
-                    System.out.println("  " + headers[i] + ": " + headers[i+1]);
-                }
+                Assert.assertEquals(headers.length, 6);
+                Assert.assertEquals(method, "POST");
+                Assert.assertEquals(httpVersionMajor, 1);
+                Assert.assertEquals(httpVersionMinor, 1);
+                Assert.assertTrue(shouldKeepAlive);
+                Assert.assertFalse(upgrade);
                 return 0;
             }
 
@@ -158,14 +170,12 @@ public class HttpTest {
             public int onBody(int offset, int length) {
                 bodyCalled.set(offset > 0 && length > 0);
                 final String body = new String(data, offset, length);
-                System.out.println("onBody " + body);
                 Assert.assertEquals(body, "World");
                 return 0;
             }
 
             @Override
             public int onMessageComplete() {
-                System.out.println("onMessageComplete");
                 messageCompleteCalled.set(true);
                 return 0;
             }
@@ -178,8 +188,6 @@ public class HttpTest {
         Assert.assertTrue(headersCompleteCalled.get());
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
-
-        Assert.assertTrue(httpParser.shouldKeepAlive());
 
         httpParser.destroy();
     }
@@ -212,13 +220,22 @@ public class HttpTest {
 
         final HttpParserSettings settings = new HttpParserSettings() {
             @Override
-            public int onHeadersComplete(String url, String[] headers) {
-                System.out.println("onHeadersComplete");
+            public int onHeadersComplete(String url,
+                                         String[] headers,
+                                         String method,
+                                         int status,
+                                         int httpVersionMajor,
+                                         int httpVersionMinor,
+                                         boolean shouldKeepAlive,
+                                         boolean upgrade) {
                 headersCompleteCalled.set(true);
                 Assert.assertNotNull(headers);
-                for (int i=0; i < headers.length; i+=2) {
-                    System.out.println("  " + headers[i] + ": " + headers[i+1]);
-                }
+                Assert.assertEquals(headers.length, 16);
+                Assert.assertEquals(status, 301);
+                Assert.assertEquals(httpVersionMajor, 1);
+                Assert.assertEquals(httpVersionMinor, 1);
+                Assert.assertTrue(shouldKeepAlive);
+                Assert.assertFalse(upgrade);
                 return 0;
             }
 
@@ -226,7 +243,6 @@ public class HttpTest {
             public int onBody(int offset, int length) {
                 bodyCalled.set(offset > 0 && length > 0);
                 final String body = new String(data, offset, length);
-                System.out.println("onBody " + body);
                 Assert.assertEquals(body,
                     "<HTML><HEAD><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\n" +
                     "<TITLE>301 Moved</TITLE></HEAD><BODY>\n" +
@@ -239,7 +255,6 @@ public class HttpTest {
 
             @Override
             public int onMessageComplete() {
-                System.out.println("onMessageComplete");
                 messageCompleteCalled.set(true);
                 return 0;
             }
@@ -252,8 +267,6 @@ public class HttpTest {
         Assert.assertTrue(headersCompleteCalled.get());
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
-
-        Assert.assertTrue(httpParser.shouldKeepAlive());
 
         httpParser.destroy();
     }

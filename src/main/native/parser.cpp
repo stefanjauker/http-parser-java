@@ -57,7 +57,7 @@ class DataHolder {
    int _hvalues;
    struct http_parser _parser;
 
-   int send_headers(jmethodID mid);
+   int send_headers(bool complete);
 
  public:
    inline jobject settings() { return _settings; }
@@ -66,7 +66,7 @@ class DataHolder {
    inline const char* data() { return _data; }
    inline void set_data(const char* data) { _data = data; }
    inline string& url() { return _url; }
-   inline int on_message_begin() { _url.clear(); return 0; }
+   inline void on_message_begin() { _url.clear(); }
    inline http_parser* parser() { return &_parser; }
    inline void init(http_parser_type type) { http_parser_init(&_parser, type); }
 
@@ -94,6 +94,7 @@ DataHolder::~DataHolder() {
 }
 
 void DataHolder::clear() {
+  _headers.clear();
   _settings = NULL;
   _data = NULL;
   _url.clear();
@@ -125,15 +126,15 @@ void DataHolder::push_header_value(string* value) {
 
 void DataHolder::on_message_complete() {
   if (_hkeys != 0) {
-      this->send_headers(_on_headers_mid);
+      this->send_headers(false);
   }
 }
 
 int DataHolder::on_headers_complete() {
-  return this->send_headers(_on_headers_complete_mid);
+  return this->send_headers(true);
 }
 
-int DataHolder::send_headers(jmethodID mid) {
+int DataHolder::send_headers(bool complete) {
   int size = static_cast<int>(_headers.size());
   jobjectArray headers = _env->NewObjectArray(size, _string_cid, 0);
   for (int i = 0; i < size - 1; i+=2) {
@@ -145,35 +146,27 @@ int DataHolder::send_headers(jmethodID mid) {
   _hkeys = _hvalues = 0;
   _headers.clear();
   jstring url = _env->NewStringUTF(_url.data());
-  return _env->CallIntMethod(_settings, mid, url, headers);
-}
-
-static int call_cb(jmethodID mid, http_parser* parser) {
-  assert(_env);
-  assert(parser);
-  assert(parser->data);
-  DataHolder* holder = (DataHolder*) parser->data;
-  return _env->CallIntMethod(holder->settings(), mid);
-}
-
-static int call_data_cb(jmethodID mid, http_parser* parser, const char* at, size_t length) {
-  assert(_env);
-  assert(parser);
-  assert(parser->data);
-  DataHolder* holder = (DataHolder*) parser->data;
-  const size_t offset = at - holder->data();
-  return _env->CallIntMethod(holder->settings(), mid, offset, length);
+  return complete ?
+    _env->CallIntMethod(_settings, _on_headers_complete_mid, url, headers,
+      _env->NewStringUTF(http_method_str((http_method) _parser.method)),
+      _parser.status_code,
+      _parser.http_major,
+      _parser.http_minor,
+      http_should_keep_alive(&_parser) ? JNI_TRUE : JNI_FALSE,
+      _parser.upgrade ? JNI_TRUE : JNI_FALSE) :
+    _env->CallIntMethod(_settings, _on_headers_mid, url, headers);
 }
 
 static int _on_message_begin_cb(http_parser* parser) {
-  assert(_env);
   assert(parser);
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
-  return holder->on_message_begin();
+  holder->on_message_begin();
+  return 0;
 }
 
 static int _on_url_cb(http_parser* parser, const char* at, size_t length) {
+  assert(parser);
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
   holder->url().append(at, length);
@@ -181,6 +174,7 @@ static int _on_url_cb(http_parser* parser, const char* at, size_t length) {
 }
 
 static int _on_header_field_cb(http_parser* parser, const char* at, size_t length) {
+  assert(parser);
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
   holder->push_header_key(new string(at, length));
@@ -188,6 +182,7 @@ static int _on_header_field_cb(http_parser* parser, const char* at, size_t lengt
 }
 
 static int _on_header_value_cb(http_parser* parser, const char* at, size_t length) {
+  assert(parser);
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
   holder->push_header_value(new string(at, length));
@@ -195,20 +190,26 @@ static int _on_header_value_cb(http_parser* parser, const char* at, size_t lengt
 }
 
 static int _on_headers_complete_cb(http_parser* parser) {
+  assert(parser);
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
   return holder->on_headers_complete();
 }
 
 static int _on_body_cb(http_parser* parser, const char* at, size_t length) {
-  return call_data_cb(_on_body_mid, parser, at, length);
+  assert(parser);
+  assert(parser->data);
+  DataHolder* holder = (DataHolder*) parser->data;
+  const size_t offset = at - holder->data();
+  return _env->CallIntMethod(holder->settings(), _on_body_mid, offset, length);
 }
 
 static int _on_message_complete_cb(http_parser* parser) {
+  assert(parser);
   assert(parser->data);
   DataHolder* holder = (DataHolder*) parser->data;
   holder->on_message_complete();
-  return call_cb(_on_message_complete_mid, parser);
+  return _env->CallIntMethod(holder->settings(), _on_message_complete_mid);
 }
 
 /*
@@ -228,16 +229,24 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1static_1initializ
   _settings_cid = (jclass) env->NewGlobalRef(_settings_cid);
   assert(_settings_cid);
 
-  _on_headers_complete_mid = env->GetMethodID(_settings_cid, "onHeadersComplete", "(Ljava/lang/String;[Ljava/lang/String;)I");
+  _on_headers_complete_mid = env->GetMethodID(_settings_cid,
+    "onHeadersComplete",
+    "(Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;IIIZZ)I");
   assert(_on_headers_complete_mid);
 
-  _on_headers_mid = env->GetMethodID(_settings_cid, "onHeaders", "(Ljava/lang/String;[Ljava/lang/String;)I");
+  _on_headers_mid = env->GetMethodID(_settings_cid,
+    "onHeaders",
+    "(Ljava/lang/String;[Ljava/lang/String;)I");
   assert(_on_headers_mid);
 
-  _on_body_mid = env->GetMethodID(_settings_cid, "onBody", "(II)I");
+  _on_body_mid = env->GetMethodID(_settings_cid,
+    "onBody",
+    "(II)I");
   assert(_on_body_mid);
 
-  _on_message_complete_mid = env->GetMethodID(_settings_cid, "onMessageComplete", "()I");
+  _on_message_complete_mid = env->GetMethodID(_settings_cid,
+    "onMessageComplete",
+    "()I");
   assert(_on_message_complete_mid);
 }
 
@@ -308,19 +317,6 @@ JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1execute
 
 /*
  * Class:     com_oracle_httpparser_HttpParser
- * Method:    _should_keep_alive
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_com_oracle_httpparser_HttpParser__1should_1keep_1alive
-  (JNIEnv *env, jobject that, jlong ptr) {
-
-  assert(ptr);
-  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
-  return http_should_keep_alive(holder->parser()) ? JNI_TRUE : JNI_FALSE;
-}
-
-/*
- * Class:     com_oracle_httpparser_HttpParser
  * Method:    _upgrade
  * Signature: (J)Z
  */
@@ -347,46 +343,6 @@ JNIEXPORT void JNICALL Java_com_oracle_httpparser_HttpParser__1destroy
 
 /*
  * Class:     com_oracle_httpparser_HttpParser
- * Method:    _minor
- * Signature: (J)S
- */
-JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1minor
-  (JNIEnv *env, jobject that, jlong ptr) {
-
-  assert(ptr);
-  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
-  return holder->parser()->http_minor;
-}
-
-/*
- * Class:     com_oracle_httpparser_HttpParser
- * Method:    _major
- * Signature: (J)S
- */
-JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1major
-  (JNIEnv *env, jobject that, jlong ptr) {
-
-  assert(ptr);
-  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
-  return holder->parser()->http_major;
-}
-
-/*
- * Class:     com_oracle_httpparser_HttpParser
- * Method:    _method
- * Signature: (J)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1method
-  (JNIEnv *env, jobject that, jlong ptr) {
-
-  assert(ptr);
-  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
-  return env->NewStringUTF(http_method_str((http_method) holder->parser()->method));
-}
-
-
-/*
- * Class:     com_oracle_httpparser_HttpParser
  * Method:    _errno_name
  * Signature: (J)Ljava/lang/String;
  */
@@ -397,19 +353,6 @@ JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1errno_1name
   DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
   enum http_errno err = HTTP_PARSER_ERRNO(holder->parser());
   return env->NewStringUTF(http_errno_name(err));
-}
-
-/*
- * Class:     com_oracle_httpparser_HttpParser
- * Method:    _status_code
- * Signature: (J)S;
- */
-JNIEXPORT jshort JNICALL Java_com_oracle_httpparser_HttpParser__1status_1code
-  (JNIEnv *env, jobject that, jlong ptr) {
-
-  assert(ptr);
-  DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
-  return holder->parser()->status_code;
 }
 
 /*

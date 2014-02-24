@@ -27,15 +27,24 @@ package com.oracle.httpparser;
 
 public abstract class HttpParserSettings {
 
-    public int onHeadersComplete(String url, String[] headers) {
+    public int onHeadersComplete(String url,
+                                 String[] headers,
+                                 String method,
+                                 int status,
+                                 int httpVersionMajor,
+                                 int httpVersionMinor,
+                                 boolean shouldKeepAlive,
+                                 boolean upgrade) {
         return 0;
     }
 
-    public int onHeaders(String url, String[] headers) {
+    public int onHeaders(String url,
+                         String[] headers) {
         return 0;
     }
 
-    public int onBody(int offset, int length) {
+    public int onBody(int offset,
+                      int length) {
         return 0;
     }
 
