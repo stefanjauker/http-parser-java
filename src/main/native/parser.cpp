@@ -285,6 +285,7 @@ JNIEXPORT jlong JNICALL Java_com_oracle_httpparser_HttpParser__1execute
   (JNIEnv *env, jobject that, jlong ptr, jobject settings, jobject buffer, jbyteArray bytes, jint offset, jint length) {
 
   assert(ptr);
+  _env = env;
   DataHolder* holder = reinterpret_cast<DataHolder*>(ptr);
   holder->set_settings(settings);
 
