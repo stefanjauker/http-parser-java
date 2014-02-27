@@ -142,19 +142,28 @@ int DataHolder::send_headers(bool complete) {
     jstring value = _env->NewStringUTF(_headers.at(i+1)->data());
     _env->SetObjectArrayElement(headers, i, field);
     _env->SetObjectArrayElement(headers, i+1, value);
+    _env->DeleteLocalRef(field);
+    _env->DeleteLocalRef(value);
   }
   _hkeys = _hvalues = 0;
   _headers.clear();
   jstring url = _env->NewStringUTF(_url.data());
-  return complete ?
-    _env->CallIntMethod(_settings, _on_headers_complete_mid, url, headers,
-      _env->NewStringUTF(http_method_str((http_method) _parser.method)),
+  int r;
+  if (complete) {
+    jstring method = _env->NewStringUTF(http_method_str((http_method) _parser.method));
+    r = _env->CallIntMethod(_settings, _on_headers_complete_mid, url, headers,
+      method,
       _parser.status_code,
       _parser.http_major,
       _parser.http_minor,
       http_should_keep_alive(&_parser) ? JNI_TRUE : JNI_FALSE,
-      _parser.upgrade ? JNI_TRUE : JNI_FALSE) :
-    _env->CallIntMethod(_settings, _on_headers_mid, url, headers);
+      _parser.upgrade ? JNI_TRUE : JNI_FALSE);
+      _env->DeleteLocalRef(method);
+  } else {
+    r = _env->CallIntMethod(_settings, _on_headers_mid, url, headers);
+  }
+  _env->DeleteLocalRef(url);
+  return r;
 }
 
 static int _on_message_begin_cb(http_parser* parser) {
