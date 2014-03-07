@@ -373,9 +373,10 @@ JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1errno_1name
 JNIEXPORT jstring JNICALL Java_com_oracle_httpparser_HttpParser__1version
   (JNIEnv *env, jobject that) {
 
-  char version[32];
+  char version[64];
   memset(version, 0, sizeof(version));
-  snprintf(version, sizeof(version), "%d.%d", HTTP_PARSER_VERSION_MAJOR, HTTP_PARSER_VERSION_MINOR);
+  snprintf(version, sizeof(version), "%d.%d.%d",
+    HTTP_PARSER_VERSION_MAJOR, HTTP_PARSER_VERSION_MINOR, HTTP_PARSER_VERSION_PATCH);
   return env->NewStringUTF(version);
 }
 

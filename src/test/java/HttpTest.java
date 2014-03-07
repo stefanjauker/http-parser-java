@@ -59,6 +59,14 @@ public class HttpTest {
         System.loadLibrary("avatar-js");
     }
 
+    private static HttpParser httpParser = new HttpParser();
+
+    @Test
+    public void testVersion() {
+        final String version = httpParser.version();
+        Assert.assertEquals(version, "2.2.1");
+    }
+
     @Test
     public void testFirefoxGet() throws UnsupportedEncodingException {
         final String raw =
@@ -118,7 +126,6 @@ public class HttpTest {
             }
         };
 
-        final HttpParser httpParser = new HttpParser();
         httpParser.init(HttpParser.Type.REQUEST);
         httpParser.execute(settings, buffer, 0, buffer.limit());
 
@@ -126,7 +133,7 @@ public class HttpTest {
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
 
-        httpParser.destroy();
+        httpParser.free();
     }
 
     @Test
@@ -181,7 +188,6 @@ public class HttpTest {
             }
         };
 
-        final HttpParser httpParser = new HttpParser();
         httpParser.init(HttpParser.Type.REQUEST);
         httpParser.execute(settings, buffer, 0, buffer.limit());
 
@@ -189,7 +195,7 @@ public class HttpTest {
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
 
-        httpParser.destroy();
+        httpParser.free();
     }
 
     @Test
@@ -260,7 +266,6 @@ public class HttpTest {
             }
         };
 
-        final HttpParser httpParser = new HttpParser();
         httpParser.init(HttpParser.Type.RESPONSE);
         httpParser.execute(settings, buffer, 0, buffer.limit());
 
@@ -268,7 +273,7 @@ public class HttpTest {
         Assert.assertTrue(bodyCalled.get());
         Assert.assertTrue(messageCompleteCalled.get());
 
-        httpParser.destroy();
+        httpParser.free();
     }
 
 }
